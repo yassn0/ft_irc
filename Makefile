@@ -1,8 +1,13 @@
 CC     = c++
 FLAGS  = -Wall -Werror -Wextra -std=c++98
 
-SRCS   = main.cpp
+WAY = srcs/
+
+SRCS   = $(WAY)main.cpp \
+
+
 OBJS   = $(SRCS:.cpp=.o)
+
 NAME   = ircserv
 
 all: $(NAME)
