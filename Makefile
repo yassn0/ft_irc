@@ -1,9 +1,12 @@
 CC     = c++
-FLAGS  = -Wall -Werror -Wextra -std=c++98
+FLAGS  = -Wall -Werror -Wextra -g3 -std=c++98
 
-WAY = srcs/
+WAY = src/
+WAY_H = inc/
 
 SRCS   = $(WAY)main.cpp \
+
+HEADER  =  
 
 
 OBJS   = $(SRCS:.cpp=.o)
