@@ -5,8 +5,14 @@ WAY = src/
 WAY_H = inc/
 
 SRCS   = $(WAY)main.cpp \
-
-HEADER  =  
+		$(WAY)Server.cpp \
+		$(WAY)Client.cpp \
+		$(WAY)Channel.cpp
+		
+HEADER  = $(WAY_H)main.cpp \
+		$(WAY_H)Server.cpp \
+		$(WAY_H)Client.cpp \
+		$(WAY_H)Channel.cpp
 
 
 OBJS   = $(SRCS:.cpp=.o)

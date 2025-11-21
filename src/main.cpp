@@ -4,6 +4,9 @@
 #include <cerrno>
 #include <climits>
 #include <cstring>
+#include "../inc/Server.hpp"
+#include "../inc/Client.hpp"
+#include "../inc/Channel.hpp"
 
 static bool is_valid_number(const char *str)
 {
@@ -40,12 +43,10 @@ int main(int ac, char **av)
 		if (ac != 3)
 			throw std::runtime_error("Error: Two arguments needed, <port> and <password>");
 
-		check_arg(av);
-
-		//code 
-
+		check_arg(av); // check le port et le password
+		Server server(av[1], av[2]);
 	}
-	catch(const std::exception& e)
+	catch (const std::exception &e)
 	{
 		std::cerr << e.what() << std::endl;
 		return 1;
