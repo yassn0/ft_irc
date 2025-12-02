@@ -5,8 +5,8 @@
 #include <climits>
 #include <cstring>
 #include "../inc/Server.hpp"
-#include "../inc/Client.hpp"
-#include "../inc/Channel.hpp"
+// #include "../inc/Client.hpp"  // Pas encore utilisé
+// #include "../inc/Channel.hpp" // Pas encore utilisé
 
 static bool is_valid_number(const char *str)
 {
@@ -44,7 +44,10 @@ int main(int ac, char **av)
 			throw std::runtime_error("Error: Two arguments needed, <port> and <password>");
 
 		check_arg(av); // check le port et le password
+
+		// Créer et lancer le serveur
 		Server server(av[1], av[2]);
+		server.start(); // Boucle infinie avec poll()
 	}
 	catch (const std::exception &e)
 	{

@@ -15,15 +15,21 @@ public:
 	void start(); // lance la boucle principale
 
 private:
-	// interdire la copie
+	// Interdire la copie (pattern Coplien C++98)
 	Server();
-	Server(const std::string &port);
 	Server(const Server &other);
 	Server &operator=(const Server &other);
 
-	int _server_fd;					// Socket serveur
-	int _port;						// Port d'écoute
-	std::string _password;			// Mot de passe du serveur
-	std::vector<Client *> _clients; 		// Liste des clients connectés
-	std::vector<struct pollfd> _poll_fds;	// Pour poll()
+	// Méthodes privées pour gérer le serveur
+	void setupSocket();           // Crée et configure le socket serveur
+	void acceptNewClient();       // Accepte une nouvelle connexion
+	void handleClientMessage(int client_fd);  // Traite un message reçu
+	void removeClient(int client_fd);         // Supprime un client déconnecté
+
+	// Attributs privés
+	int _server_fd;                     // Socket serveur (le FD principal)
+	int _port;                          // Port d'écoute (ex: 6667)
+	std::string _password;              // Mot de passe du serveur
+	std::vector<Client *> _clients;     // Liste des clients connectés
+	std::vector<struct pollfd> _poll_fds;  // Tableau pour poll()
 };
