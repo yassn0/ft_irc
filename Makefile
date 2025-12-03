@@ -5,12 +5,12 @@ WAY = src/
 WAY_H = inc/
 
 SRCS   = $(WAY)main.cpp \
-		$(WAY)Server.cpp
-		# $(WAY)Client.cpp \
+		$(WAY)Server.cpp \
+		$(WAY)Client.cpp
 		# $(WAY)Channel.cpp
 
-HEADER  = $(WAY_H)Server.hpp
-		# $(WAY_H)Client.hpp \
+HEADER  = $(WAY_H)Server.hpp \
+		$(WAY_H)Client.hpp
 		# $(WAY_H)Channel.hpp
 
 
