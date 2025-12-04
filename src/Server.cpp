@@ -11,16 +11,15 @@
 #include <arpa/inet.h>
 #include <csignal>
 
-sig_atomic_t g_shutdown = 0;
+bool g_shutdown = false;
 
 void signalHandler(int signal)
 {
 	(void)signal;
-	g_shutdown = 1;
+	g_shutdown = true;
 }
 
-Server::Server(const std::string &port, const std::string &pass)
-	: _server_fd(-1), _port(0), _password(pass), _commandHandler(NULL)
+Server::Server(const std::string &port, const std::string &pass) : _server_fd(-1), _port(0), _password(pass), _commandHandler(this)
 {
 	_port = std::atoi(port.c_str());
 	std::cout << "IRC Server started on port " << _port << std::endl;
@@ -28,15 +27,11 @@ Server::Server(const std::string &port, const std::string &pass)
 	std::signal(SIGINT, signalHandler);
 	std::signal(SIGTERM, signalHandler);
 
-	_commandHandler = new CommandHandler(this);
-
 	setupSocket();
 }
 
 Server::~Server()
 {
-	delete _commandHandler;
-
 	// fermer et supprimer tous les clients restants
 	// On fait une copie du vecteur pour éviter les problèmes d'itération
 	std::vector<int> client_fds;
@@ -186,7 +181,7 @@ void Server::handleClientMessage(int client_fd)
 
 	buffer[bytes_read] = '\0';
 
-	Client* client = getClientByFd(client_fd);
+	Client *client = getClientByFd(client_fd);
 	if (!client)
 		return;
 
@@ -201,11 +196,11 @@ void Server::handleClientMessage(int client_fd)
 	{
 		// extraire la commande
 		std::string command = buf.substr(0, pos);
-		buf.erase(0, pos + 2);  // Enlever la commande + \r\n
+		buf.erase(0, pos + 2); // Enlever la commande + \r\n
 
 		// traiter la commande via CommandHandler
 		if (!command.empty())
-			_commandHandler->execute(client, command);
+			_commandHandler.execute(client, command);
 	}
 
 	// mettre à jour le buffer du client
@@ -237,7 +232,7 @@ void Server::removeClient(int client_fd)
 	}
 }
 
-Client* Server::getClientByFd(int fd)
+Client *Server::getClientByFd(int fd)
 {
 	for (size_t i = 0; i < _clients.size(); i++)
 	{
@@ -247,7 +242,7 @@ Client* Server::getClientByFd(int fd)
 	return NULL;
 }
 
-const std::string& Server::getPassword() const
+const std::string &Server::getPassword() const
 {
 	return _password;
 }

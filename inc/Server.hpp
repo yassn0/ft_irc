@@ -3,9 +3,9 @@
 #include <string>
 #include <vector>
 #include <poll.h>
+#include "CommandHandler.hpp"
 
 class Client;
-class CommandHandler;
 
 class Server
 {
@@ -38,5 +38,5 @@ private:
 	std::string _password;              // Mot de passe du serveur
 	std::vector<Client *> _clients;     // Liste des clients connectés
 	std::vector<struct pollfd> _poll_fds;  // Tableau pour poll()
-	CommandHandler* _commandHandler;    // Gestionnaire de commandes IRC
+	CommandHandler _commandHandler;     // Gestionnaire de commandes IRC
 };
