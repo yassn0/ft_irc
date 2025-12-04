@@ -120,6 +120,13 @@ void CommandHandler::handleJoin(Client *client, const std::string &params)
 	(void)client;
 	(void)params;
 	std::cout << "JOIN not implemented yet" << std::endl;
+	
+	// if (params.empty())
+    // {
+	// 	client->sendMessage(ERR_NEEDMOREPARAMS(client->getNickname(), "USER"));
+    //     return;
+    // }
+
 }
 
 // PRIVMSG - Envoyer un message (à implémenter)
