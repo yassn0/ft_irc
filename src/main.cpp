@@ -36,6 +36,7 @@ static void check_arg(char **av)
 		throw std::runtime_error("Error: Password cannot be empty");
 }
 
+
 int main(int ac, char **av)
 {
 	try
@@ -45,9 +46,8 @@ int main(int ac, char **av)
 
 		check_arg(av); // check le port et le password
 
-		// Créer et lancer le serveur
 		Server server(av[1], av[2]);
-		server.start(); // Boucle infinie avec poll()
+		server.start(); // boucle infinie avec poll()
 	}
 	catch (const std::exception &e)
 	{

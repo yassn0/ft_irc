@@ -21,10 +21,14 @@ private:
 	Server &operator=(const Server &other);
 
 	// Méthodes privées pour gérer le serveur
-	void setupSocket();           // Crée et configure le socket serveur
-	void acceptNewClient();       // Accepte une nouvelle connexion
+	void setupSocket();                       // Crée et configure le socket serveur
+	void acceptNewClient();                   // Accepte une nouvelle connexion
 	void handleClientMessage(int client_fd);  // Traite un message reçu
 	void removeClient(int client_fd);         // Supprime un client déconnecté
+
+	// Traitement des commandes IRC
+	void handleCommand(Client* client, const std::string& command);
+	Client* getClientByFd(int fd);            // Trouve un client par son FD
 
 	// Attributs privés
 	int _server_fd;                     // Socket serveur (le FD principal)
