@@ -5,6 +5,7 @@
 #include <poll.h>
 
 class Client;
+class CommandHandler;
 
 class Server
 {
@@ -13,6 +14,8 @@ public:
 	~Server();
 
 	void start(); // lance la boucle principale
+
+	const std::string& getPassword() const;
 
 private:
 	// Interdire la copie (pattern Coplien C++98)
@@ -26,8 +29,7 @@ private:
 	void handleClientMessage(int client_fd);  // Traite un message reçu
 	void removeClient(int client_fd);         // Supprime un client déconnecté
 
-	// Traitement des commandes IRC
-	void handleCommand(Client* client, const std::string& command);
+	// Utilitaires
 	Client* getClientByFd(int fd);            // Trouve un client par son FD
 
 	// Attributs privés
@@ -36,4 +38,5 @@ private:
 	std::string _password;              // Mot de passe du serveur
 	std::vector<Client *> _clients;     // Liste des clients connectés
 	std::vector<struct pollfd> _poll_fds;  // Tableau pour poll()
+	CommandHandler* _commandHandler;    // Gestionnaire de commandes IRC
 };

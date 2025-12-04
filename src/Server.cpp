@@ -1,5 +1,6 @@
 #include "../inc/Server.hpp"
 #include "../inc/Client.hpp"
+#include "../inc/CommandHandler.hpp"
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
@@ -10,15 +11,22 @@
 #include <arpa/inet.h>
 
 Server::Server(const std::string &port, const std::string &pass)
-	: _server_fd(-1), _port(0), _password(pass)
+	: _server_fd(-1), _port(0), _password(pass), _commandHandler(NULL)
 {
 	_port = std::atoi(port.c_str());
 	std::cout << "IRC Server started on port " << _port << std::endl;
+
+	// Créer le gestionnaire de commandes
+	_commandHandler = new CommandHandler(this);
+
 	setupSocket();
 }
 
 Server::~Server()
 {
+	// Delete le gestionnaire de commandes
+	delete _commandHandler;
+
 	// Delete tous les clients
 	for (size_t i = 0; i < _clients.size(); i++)
 		delete _clients[i];
@@ -182,9 +190,9 @@ void Server::handleClientMessage(int client_fd)
 		std::string command = buf.substr(0, pos);
 		buf.erase(0, pos + 2);  // Enlever la commande + \r\n
 
-		// Traiter la commande
+		// Traiter la commande via CommandHandler
 		if (!command.empty())
-			handleCommand(client, command);
+			_commandHandler->execute(client, command);
 	}
 
 	// Mettre à jour le buffer du client
@@ -230,13 +238,8 @@ Client* Server::getClientByFd(int fd)
 	return NULL;
 }
 
-// Traite une commande IRC
-void Server::handleCommand(Client* client, const std::string& command)
+// Getter pour le password (utilisé par CommandHandler)
+const std::string& Server::getPassword() const
 {
-	// Pour l'instant, juste un echo pour voir que ça marche
-	std::cout << "Command from fd " << client->getFd() << ": " << command << std::endl;
-
-	// TODO: Parser et dispatcher les commandes (PING, NICK, USER, JOIN, etc.)
-	std::string response = ":" + std::string("server") + " NOTICE * :Echo: " + command + "\r\n";
-	client->sendMessage(response);
+	return _password;
 }
