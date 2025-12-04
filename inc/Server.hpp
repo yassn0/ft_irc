@@ -18,25 +18,21 @@ public:
 	const std::string& getPassword() const;
 
 private:
-	// Interdire la copie (pattern Coplien C++98)
 	Server();
 	Server(const Server &other);
 	Server &operator=(const Server &other);
 
-	// Méthodes privées pour gérer le serveur
-	void setupSocket();                       // Crée et configure le socket serveur
-	void acceptNewClient();                   // Accepte une nouvelle connexion
-	void handleClientMessage(int client_fd);  // Traite un message reçu
-	void removeClient(int client_fd);         // Supprime un client déconnecté
+	void setupSocket();
+	void acceptNewClient();
+	void handleClientMessage(int client_fd);
+	void removeClient(int client_fd);
 
-	// Utilitaires
-	Client* getClientByFd(int fd);            // Trouve un client par son FD
+	Client* getClientByFd(int fd);
 
-	// Attributs privés
 	int _server_fd;                     // Socket serveur (le FD principal)
-	int _port;                          // Port d'écoute (ex: 6667)
-	std::string _password;              // Mot de passe du serveur
-	std::vector<Client *> _clients;     // Liste des clients connectés
+	int _port;
+	std::string _password;
+	std::vector<Client *> _clients;
 	std::vector<struct pollfd> _poll_fds;  // Tableau pour poll()
-	CommandHandler _commandHandler;     // Gestionnaire de commandes IRC
+	CommandHandler _commandHandler;
 };
