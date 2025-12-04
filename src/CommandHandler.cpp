@@ -3,7 +3,12 @@
 #include "../inc/Server.hpp"
 #include <iostream>
 
-CommandHandler::CommandHandler(Server* server) : _server(server)
+#define ERR_NONICKNAMEGIVEN(client) (":server 431 " + std::string(client) + " :No nickname given\r\n")
+#define ERR_NEEDMOREPARAMS(client, cmd) (":server 461 " + std::string(client) + " " + std::string(cmd) + " :Not enough parameters\r\n")
+#define ERR_ALREADYREGISTRED(client) (":server 462 " + std::string(client) + " :You may not reregister\r\n")
+#define ERR_PASSWDMISMATCH(client) (":server 464 " + std::string(client) + " :Password incorrect\r\n")
+
+CommandHandler::CommandHandler(Server *server) : _server(server)
 {
 }
 
@@ -11,7 +16,7 @@ CommandHandler::~CommandHandler()
 {
 }
 
-void CommandHandler::execute(Client* client, const std::string& command)
+void CommandHandler::execute(Client *client, const std::string &command)
 {
 	std::cout << "Command from fd " << client->getFd() << ": " << command << std::endl;
 
@@ -20,7 +25,6 @@ void CommandHandler::execute(Client* client, const std::string& command)
 	std::string cmd = (pos != std::string::npos) ? command.substr(0, pos) : command;
 	std::string params = (pos != std::string::npos) ? command.substr(pos + 1) : "";
 
-	// Dispatcher vers le bon handler
 	if (cmd == "PING")
 		handlePing(client, params);
 	else if (cmd == "PASS")
@@ -29,8 +33,6 @@ void CommandHandler::execute(Client* client, const std::string& command)
 		handleNick(client, params);
 	else if (cmd == "USER")
 		handleUser(client, params);
-	else if (cmd == "CAP")
-		handleCap(client, params);
 	else if (cmd == "JOIN")
 		handleJoin(client, params);
 	else if (cmd == "PRIVMSG")
@@ -39,52 +41,81 @@ void CommandHandler::execute(Client* client, const std::string& command)
 		std::cout << "Unknown command: " << cmd << std::endl;
 }
 
-
-// PING - Critique pour irssi! Répond PONG pour éviter le timeout
-void CommandHandler::handlePing(Client* client, const std::string& params)
+void CommandHandler::handlePing(Client *client, const std::string &params)
 {
 	std::string response = ":server PONG server " + params + "\r\n";
 	client->sendMessage(response);
 }
 
-void CommandHandler::handlePass(Client* client, const std::string& params)
+void CommandHandler::handlePass(Client *client, const std::string &params)
 {
+	if (params.empty())
+	{
+		client->sendMessage(ERR_NEEDMOREPARAMS("*", "PASS"));
+		return;
+	}
+
+	if (client->isRegistered())
+	{
+		client->sendMessage(ERR_ALREADYREGISTRED(client->getNickname()));
+		return;
+	}
+
 	if (params == _server->getPassword())
 		client->setAuthenticated(true);
+	else
+		client->sendMessage(ERR_PASSWDMISMATCH("*"));
 }
 
-void CommandHandler::handleNick(Client* client, const std::string& params)
+void CommandHandler::handleNick(Client *client, const std::string &params)
 {
-	client->setNickname(params);
+	if (params.empty())
+	{
+		client->sendMessage(ERR_NONICKNAMEGIVEN("*"));
+		return;
+	}
+
+	std::string nickname = params.substr(0, params.find(' '));
+
+	// Vérifier si le nickname est déjà utilisé (on pourra implémenter ça plus tard avec une liste)
+	// Pour l'instant, on accepte tous les nicknames non vides
+
+	client->setNickname(nickname);
 }
 
-void CommandHandler::handleUser(Client* client, const std::string& params)
+void CommandHandler::handleUser(Client *client, const std::string &params)
 {
-	// Format: USER username 0 * :realname
+	if (params.empty())
+	{
+		client->sendMessage(ERR_NEEDMOREPARAMS("*", "USER"));
+		return;
+	}
+
+	if (client->isRegistered())
+	{
+		client->sendMessage(ERR_ALREADYREGISTRED(client->getNickname()));
+		return;
+	}
+
+	// format: USER username 0 * :realname
 	size_t space = params.find(' ');
 	if (space != std::string::npos)
 	{
 		std::string username = params.substr(0, space);
 		client->setUsername(username);
 
-		// Si authentifié et a un nickname → client registered
 		if (client->isAuthenticated() && !client->getNickname().empty())
 		{
 			client->setRegistered(true);
 			sendWelcomeMessages(client);
 		}
 	}
-}
-
-// CAP - Réponse aux capacités (irssi l'envoie automatiquement)
-void CommandHandler::handleCap(Client* client, const std::string& params)
-{
-	(void)params;
-	client->sendMessage(":server CAP * LS :\r\n");
+	else
+		client->sendMessage(ERR_NEEDMOREPARAMS("*", "USER"));
 }
 
 // JOIN - Rejoindre un channel (à implémenter)
-void CommandHandler::handleJoin(Client* client, const std::string& params)
+void CommandHandler::handleJoin(Client *client, const std::string &params)
 {
 	(void)client;
 	(void)params;
@@ -92,16 +123,15 @@ void CommandHandler::handleJoin(Client* client, const std::string& params)
 }
 
 // PRIVMSG - Envoyer un message (à implémenter)
-void CommandHandler::handlePrivmsg(Client* client, const std::string& params)
+void CommandHandler::handlePrivmsg(Client *client, const std::string &params)
 {
 	(void)client;
 	(void)params;
 	std::cout << "PRIVMSG not implemented yet" << std::endl;
 }
 
-
 // Envoie les messages de bienvenue (codes 001-004)
-void CommandHandler::sendWelcomeMessages(Client* client)
+void CommandHandler::sendWelcomeMessages(Client *client)
 {
 	std::string nick = client->getNickname();
 	client->sendMessage(":server 001 " + nick + " :Welcome to the IRC Network " + nick + "\r\n");

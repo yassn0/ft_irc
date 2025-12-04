@@ -9,6 +9,15 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <csignal>
+
+sig_atomic_t g_shutdown = 0;
+
+void signalHandler(int signal)
+{
+	(void)signal;
+	g_shutdown = 1;
+}
 
 Server::Server(const std::string &port, const std::string &pass)
 	: _server_fd(-1), _port(0), _password(pass), _commandHandler(NULL)
@@ -16,7 +25,9 @@ Server::Server(const std::string &port, const std::string &pass)
 	_port = std::atoi(port.c_str());
 	std::cout << "IRC Server started on port " << _port << std::endl;
 
-	// Créer le gestionnaire de commandes
+	std::signal(SIGINT, signalHandler);
+	std::signal(SIGTERM, signalHandler);
+
 	_commandHandler = new CommandHandler(this);
 
 	setupSocket();
@@ -24,19 +35,17 @@ Server::Server(const std::string &port, const std::string &pass)
 
 Server::~Server()
 {
-	// Delete le gestionnaire de commandes
 	delete _commandHandler;
 
-	// Delete tous les clients
+	// fermer et supprimer tous les clients restants
+	// On fait une copie du vecteur pour éviter les problèmes d'itération
+	std::vector<int> client_fds;
 	for (size_t i = 0; i < _clients.size(); i++)
-		delete _clients[i];
-	_clients.clear();
+		client_fds.push_back(_clients[i]->getFd());
 
-	// Fermer tous les sockets clients
-	for (size_t i = 1; i < _poll_fds.size(); i++)
-		close(_poll_fds[i].fd);
+	for (size_t i = 0; i < client_fds.size(); i++)
+		removeClient(client_fds[i]);
 
-	// Fermer le socket serveur
 	if (_server_fd != -1)
 		close(_server_fd);
 }
@@ -95,39 +104,47 @@ void Server::setupSocket()
 
 void Server::start()
 {
-	while (true)
+	std::cout << "Server running. Press Ctrl+C to stop." << std::endl;
+
+	while (!g_shutdown)
 	{
 		// poll() attend qu'il se passe quelque chose
 		// &_poll_fds[0] = pointeur vers le socket serveur
 		// _poll_fds.size() = nombre de FD à surveiller
 		// -1 = timeout infini
-		if (poll(&_poll_fds[0], _poll_fds.size(), -1) < 0)
-			throw std::runtime_error("Error while polling from fd!");
+		int poll_count = poll(&_poll_fds[0], _poll_fds.size(), -1);
+
+		// si poll() est interrompu par un signal, on continue (ou on sort si g_shutdown est mis)
+		if (poll_count < 0)
+		{
+			if (g_shutdown)
+				break;
+			continue;
+		}
 
 		// poll > 0 = activite
-		// on parcourt tous les file descriptors
-		for (size_t i = 0; i < _poll_fds.size(); i++)
+		// on parcourt tous les file descriptors en sens inverse pour éviter les problèmes de suppression
+		for (size_t i = _poll_fds.size(); i > 0; i--)
 		{
-			// verifie si ce fd a de l'activite
-			if (_poll_fds[i].revents & POLLIN)
-			{
+			size_t idx = i - 1;
 
-				if (_poll_fds[i].fd == _server_fd)
+			// verifie si ce fd a de l'activite
+			if (_poll_fds[idx].revents & POLLIN)
+			{
+				if (_poll_fds[idx].fd == _server_fd)
 					acceptNewClient();
 				else
-					handleClientMessage(_poll_fds[i].fd);
+					handleClientMessage(_poll_fds[idx].fd);
 			}
 
-			if (_poll_fds[i].revents & POLLHUP)
-			{
-				removeClient(_poll_fds[i].fd);
-				i--;
-			}
+			if (_poll_fds[idx].revents & POLLHUP)
+				removeClient(_poll_fds[idx].fd);
 		}
 	}
+
+	std::cout << "Server shutting down..." << std::endl;
 }
 
-// Accepte une nouvelle connexion
 void Server::acceptNewClient()
 {
 	struct sockaddr_in client_addr = {};
@@ -144,16 +161,13 @@ void Server::acceptNewClient()
 		throw std::runtime_error("Error: Failed to set client non-blocking");
 	}
 
-	// Ajouter ce client au tableau poll
 	struct pollfd client_pollfd = {client_fd, POLLIN, 0};
 	_poll_fds.push_back(client_pollfd);
 
-	// Créer l'objet Client
 	Client *new_client = new Client(client_fd);
 	_clients.push_back(new_client);
 }
 
-// Reçoit et traite un message
 void Server::handleClientMessage(int client_fd)
 {
 	char buffer[1024];
@@ -172,40 +186,37 @@ void Server::handleClientMessage(int client_fd)
 
 	buffer[bytes_read] = '\0';
 
-	// Trouver le client correspondant
 	Client* client = getClientByFd(client_fd);
 	if (!client)
 		return;
 
-	// Ajouter les données au buffer du client
+	// ajoute les données au buffer du client
 	client->appendToBuffer(std::string(buffer, bytes_read));
 
-	// Chercher des commandes complètes (terminées par \r\n)
+	// chercher des commandes complètes (terminées par \r\n)
 	std::string buf = client->getBuffer();
 	size_t pos;
 
 	while ((pos = buf.find("\r\n")) != std::string::npos)
 	{
-		// Extraire la commande
+		// extraire la commande
 		std::string command = buf.substr(0, pos);
 		buf.erase(0, pos + 2);  // Enlever la commande + \r\n
 
-		// Traiter la commande via CommandHandler
+		// traiter la commande via CommandHandler
 		if (!command.empty())
 			_commandHandler->execute(client, command);
 	}
 
-	// Mettre à jour le buffer du client
+	// mettre à jour le buffer du client
 	client->clearBuffer();
 	client->appendToBuffer(buf);
 }
 
-// Supprime un client déconnecté
 void Server::removeClient(int client_fd)
 {
 	close(client_fd);
 
-	// Retirer du tableau poll
 	for (size_t i = 0; i < _poll_fds.size(); i++)
 	{
 		if (_poll_fds[i].fd == client_fd)
@@ -215,7 +226,6 @@ void Server::removeClient(int client_fd)
 		}
 	}
 
-	// Retirer de _clients et delete l'objet
 	for (size_t i = 0; i < _clients.size(); i++)
 	{
 		if (_clients[i]->getFd() == client_fd)
@@ -227,7 +237,6 @@ void Server::removeClient(int client_fd)
 	}
 }
 
-// Trouve un client par son file descriptor
 Client* Server::getClientByFd(int fd)
 {
 	for (size_t i = 0; i < _clients.size(); i++)
@@ -238,7 +247,6 @@ Client* Server::getClientByFd(int fd)
 	return NULL;
 }
 
-// Getter pour le password (utilisé par CommandHandler)
 const std::string& Server::getPassword() const
 {
 	return _password;

@@ -8,13 +8,14 @@ Client::Client(int fd) : _fd(fd), _nickname(""), _username(""), _buffer(""), _au
 
 Client::~Client()
 {
-	// Le fd sera ferm� par Server, pas ici
 }
 
-// Envoyer un message au client
-void Client::sendMessage(const std::string &message)
+bool Client::sendMessage(const std::string &message)
 {
-	send(_fd, message.c_str(), message.length(), 0);
+	ssize_t bytes_sent = send(_fd, message.c_str(), message.length(), 0);
+	if (bytes_sent < 0 || (size_t)bytes_sent != message.length())
+		return false;
+	return true;
 }
 
 // Getters
@@ -69,7 +70,6 @@ void Client::setRegistered(bool reg)
 	_registered = reg;
 }
 
-// Gestion du buffer
 void Client::appendToBuffer(const std::string &data)
 {
 	_buffer += data;

@@ -8,8 +8,8 @@ public:
 	Client(int fd);
 	~Client();
 
-	// envoyer message
-	void sendMessage(const std::string &message);
+	// envoyer message (retourne false si échec)
+	bool sendMessage(const std::string &message);
 
 	int getFd() const;
 	const std::string &getNickname() const;
