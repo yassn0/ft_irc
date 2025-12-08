@@ -141,6 +141,14 @@ void Server::start()
 			if (_poll_fds[idx].revents & POLLHUP)
 				removeClient(_poll_fds[idx].fd);
 		}
+
+		// vérifier si des clients doivent être déconnectés (après QUIT par exemple)
+		for (size_t i = _clients.size(); i > 0; i--)
+		{
+			size_t idx = i - 1;
+			if (_clients[idx]->shouldDisconnect())
+				removeClient(_clients[idx]->getFd());
+		}
 	}
 
 	std::cout << "Server shutting down..." << std::endl;
@@ -274,4 +282,9 @@ Channel *Server::createChannel(const std::string &name, const std::string &key, 
 std::vector<Client *> Server::getAllClients() const
 {
 	return _clients;
+}
+
+std::vector<Channel *> Server::getAllChannels() const
+{
+	return _channels;
 }

@@ -15,6 +15,7 @@
 #define ERR_NOTEXTTOSEND(client) (":server 412 " + std::string(client) + " :No text to send\r\n")
 #define ERR_NOSUCHNICK(client, nick) (":server 401 " + std::string(client) + " " + std::string(nick) + " :No such nick/channel\r\n")
 #define ERR_CANNOTSENDTOCHAN(client, chan) (":server 404 " + std::string(client) + " " + std::string(chan) + " :Cannot send to channel\r\n")
+#define ERR_NOTONCHANNEL(client, chan) (":server 442 " + std::string(client) + " " + std::string(chan) + " :You're not on that channel\r\n")
 
 CommandHandler::CommandHandler(Server *server) : _server(server)
 {
@@ -34,19 +35,21 @@ void CommandHandler::execute(Client *client, const std::string &command)
 	std::string params = (pos != std::string::npos) ? command.substr(pos + 1) : "";
 
 	// tableau de commandes
-	std::string commands[6] = {"PING", "PASS", "NICK", "USER", "JOIN", "PRIVMSG"};
+	std::string commands[8] = {"PING", "PASS", "NICK", "USER", "JOIN", "PRIVMSG", "PART", "QUIT"};
 
 	// tableau des pointeurs de fonctions membres
-	void (CommandHandler::*handlers[6])(Client *, const std::string &) = {
+	void (CommandHandler::*handlers[8])(Client *, const std::string &) = {
 		&CommandHandler::handlePing,
 		&CommandHandler::handlePass,
 		&CommandHandler::handleNick,
 		&CommandHandler::handleUser,
 		&CommandHandler::handleJoin,
-		&CommandHandler::handlePrivmsg
+		&CommandHandler::handlePrivmsg,
+		&CommandHandler::handlePart,
+		&CommandHandler::handleQuit
 	};
 
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < 8; i++)
 	{
 		if (cmd == commands[i])
 		{
@@ -280,6 +283,91 @@ void CommandHandler::handlePrivmsg(Client *client, const std::string &params)
 		std::string fullMsg = ":" + client->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
 		targetClient->sendMessage(fullMsg);
 	}
+}
+
+void CommandHandler::handlePart(Client *client, const std::string &params)
+{
+	if (!client->isRegistered())
+	{
+		client->sendMessage(ERR_NOTREGISTERED(client->getNickname()));
+		return;
+	}
+
+	if (params.empty())
+	{
+		client->sendMessage(ERR_NEEDMOREPARAMS(client->getNickname(), "PART"));
+		return;
+	}
+
+	// parser PART #channel [:reason]
+	size_t space = params.find(' ');
+	std::string channelName = params.substr(0, space);
+	std::string reason = (space != std::string::npos) ? params.substr(space + 1) : "";
+
+	// enlever le : au début de la raison si présent
+	if (!reason.empty() && reason[0] == ':')
+		reason = reason.substr(1);
+
+	Channel *channel = _server->getChannelByName(channelName);
+
+	if (!channel)
+	{
+		client->sendMessage(ERR_NOSUCHCHANNEL(client->getNickname(), channelName));
+		return;
+	}
+
+	if (!channel->has_client(client))
+	{
+		client->sendMessage(ERR_NOTONCHANNEL(client->getNickname(), channelName));
+		return;
+	}
+
+	// construire le message PART
+	std::string partMsg = ":" + client->getNickname() + " PART " + channelName;
+	if (!reason.empty())
+		partMsg += " :" + reason;
+	partMsg += "\r\n";
+
+	// broadcaster à tous les membres du channel (y compris celui qui part)
+	channel->broadcast(partMsg, NULL);
+
+	// retirer le client du channel
+	channel->remove_client(client);
+
+	// TODO: si le channel est vide, le supprimer (on peut implémenter ça plus tard)
+}
+
+void CommandHandler::handleQuit(Client *client, const std::string &params)
+{
+	// parser QUIT [:reason]
+	std::string reason = params;
+	if (!reason.empty() && reason[0] == ':')
+		reason = reason.substr(1);
+
+	// construire le message QUIT
+	std::string quitMsg = ":" + client->getNickname() + " QUIT :";
+	if (!reason.empty())
+		quitMsg += reason;
+	else
+		quitMsg += "Client exited";
+	quitMsg += "\r\n";
+
+	// envoyer le message QUIT au client lui-même
+	client->sendMessage(quitMsg);
+
+	// broadcaster le QUIT à tous les channels où le client est présent
+	std::vector<Channel *> channels = _server->getAllChannels();
+	for (size_t i = 0; i < channels.size(); i++)
+	{
+		if (channels[i]->has_client(client))
+		{
+			channels[i]->broadcast(quitMsg, client);
+			channels[i]->remove_client(client);
+		}
+	}
+
+	// marquer le client pour déconnexion
+	client->setShouldDisconnect(true);
 }
 
 void CommandHandler::sendWelcomeMessages(Client *client)

@@ -2,7 +2,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-Client::Client(int fd) : _fd(fd), _nickname(""), _username(""), _buffer(""), _authenticated(false), _registered(false)
+Client::Client(int fd) : _fd(fd), _nickname(""), _username(""), _buffer(""), _authenticated(false), _registered(false), _shouldDisconnect(false)
 {
 }
 
@@ -49,6 +49,11 @@ bool Client::isRegistered() const
 	return _registered;
 }
 
+bool Client::shouldDisconnect() const
+{
+	return _shouldDisconnect;
+}
+
 // Setters
 void Client::setNickname(const std::string &nickname)
 {
@@ -68,6 +73,11 @@ void Client::setAuthenticated(bool auth)
 void Client::setRegistered(bool reg)
 {
 	_registered = reg;
+}
+
+void Client::setShouldDisconnect(bool disconnect)
+{
+	_shouldDisconnect = disconnect;
 }
 
 void Client::appendToBuffer(const std::string &data)

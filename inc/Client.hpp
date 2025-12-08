@@ -17,8 +17,10 @@ public:
 	const std::string &getBuffer() const;
 	bool isAuthenticated() const;
 	bool isRegistered() const;
+	bool shouldDisconnect() const;
 
 	void setNickname(const std::string &nickname);
+	void setShouldDisconnect(bool disconnect);
 	void setUsername(const std::string &username);
 	void setAuthenticated(bool auth);
 	void setRegistered(bool reg);
@@ -39,4 +41,5 @@ private:
 	std::string _buffer;   // Buffer pour messages partiels
 	bool _authenticated;   // A envoyePASS avec bon password
 	bool _registered;	   // A envoye NICK + USER
+	bool _shouldDisconnect; // Le client doit être déconnecté
 };

@@ -20,6 +20,7 @@ public:
 	Channel* getChannelByName(const std::string& name);
 	Channel* createChannel(const std::string& name, const std::string& key, Client* creator);
 	std::vector<Client*> getAllClients() const;
+	std::vector<Channel*> getAllChannels() const;
 
 private:
 	Server();

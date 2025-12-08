@@ -26,6 +26,8 @@ private:
 	void handleUser(Client* client, const std::string& params);
 	void handleJoin(Client* client, const std::string& params);
 	void handlePrivmsg(Client* client, const std::string& params);
+	void handlePart(Client* client, const std::string& params);
+	void handleQuit(Client* client, const std::string& params);
 
 	void sendWelcomeMessages(Client* client);
 };
