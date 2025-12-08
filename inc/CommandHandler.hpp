@@ -4,6 +4,7 @@
 
 class Client;
 class Server;
+class Channel;
 
 class CommandHandler
 {
@@ -28,6 +29,15 @@ private:
 	void handlePrivmsg(Client* client, const std::string& params);
 	void handlePart(Client* client, const std::string& params);
 	void handleQuit(Client* client, const std::string& params);
+	void handleKick(Client* client, const std::string& params);
+	void handleInvite(Client* client, const std::string& params);
+	void handleTopic(Client* client, const std::string& params);
+	void handleMode(Client* client, const std::string& params);
+	void handleNotice(Client* client, const std::string& params);
 
 	void sendWelcomeMessages(Client* client);
+
+	// Helper functions
+	Client* findClientByNickname(const std::string& nickname);
+	Channel* getChannel(const std::string& channelName);
 };

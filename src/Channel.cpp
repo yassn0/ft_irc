@@ -1,6 +1,6 @@
 #include "../inc/Channel.hpp"
 
-Channel::Channel(const std::string &name, const std::string &key, Client *admin) : _name(name), _admin(admin), _k(key), _limit(0), _n(false)
+Channel::Channel(const std::string &name, const std::string &key, Client *admin) : _name(name), _admin(admin), _k(key), _limit(0), _n(false), _topic(""), _i(false), _t(false)
 {
 }
 
@@ -100,4 +100,76 @@ bool Channel::has_client(Client *client) const
 			return true;
 	}
 	return false;
+}
+
+// Topic
+std::string Channel::get_topic() const
+{
+	return _topic;
+}
+
+void Channel::set_topic(const std::string& topic)
+{
+	_topic = topic;
+}
+
+// Modes
+bool Channel::is_invite_only() const
+{
+	return _i;
+}
+
+void Channel::set_invite_only(bool flag)
+{
+	_i = flag;
+}
+
+bool Channel::is_topic_protected() const
+{
+	return _t;
+}
+
+void Channel::set_topic_protected(bool flag)
+{
+	_t = flag;
+}
+
+// Invitations
+bool Channel::is_invited(const std::string& nickname) const
+{
+	for (size_t i = 0; i < _inviteList.size(); i++)
+	{
+		if (_inviteList[i] == nickname)
+			return true;
+	}
+	return false;
+}
+
+void Channel::add_invite(const std::string& nickname)
+{
+	if (!is_invited(nickname))
+		_inviteList.push_back(nickname);
+}
+
+void Channel::remove_invite(const std::string& nickname)
+{
+	for (size_t i = 0; i < _inviteList.size(); i++)
+	{
+		if (_inviteList[i] == nickname)
+		{
+			_inviteList.erase(_inviteList.begin() + i);
+			return;
+		}
+	}
+}
+
+// Opérateurs
+bool Channel::is_operator(Client* client) const
+{
+	return (client == _admin);
+}
+
+void Channel::set_operator(Client* client)
+{
+	_admin = client;
 }

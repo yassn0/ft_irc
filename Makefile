@@ -8,7 +8,12 @@ SRCS   = $(WAY)main.cpp \
 		$(WAY)Server.cpp \
 		$(WAY)Client.cpp \
 		$(WAY)CommandHandler.cpp \
-		$(WAY)Channel.cpp
+		$(WAY)Channel.cpp \
+		$(WAY)commands/Kick.cpp \
+		$(WAY)commands/Invite.cpp \
+		$(WAY)commands/Topic.cpp \
+		$(WAY)commands/Mode.cpp \
+		$(WAY)commands/Notice.cpp
 
 HEADER  = $(WAY_H)Server.hpp \
 		$(WAY_H)Client.hpp \

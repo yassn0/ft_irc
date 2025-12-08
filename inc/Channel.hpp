@@ -24,6 +24,25 @@ public:
 	void set_limit(size_t limit);
 	void set_ext_msg(bool flag);
 
+	// Topic
+	std::string get_topic() const;
+	void set_topic(const std::string& topic);
+
+	// Modes
+	bool is_invite_only() const;
+	void set_invite_only(bool flag);
+	bool is_topic_protected() const;
+	void set_topic_protected(bool flag);
+
+	// Invitations
+	bool is_invited(const std::string& nickname) const;
+	void add_invite(const std::string& nickname);
+	void remove_invite(const std::string& nickname);
+
+	// Opérateurs
+	bool is_operator(Client* client) const;
+	void set_operator(Client* client);
+
 	// Actions
 	void add_client(Client *client);
 	void remove_client(Client *client);
@@ -40,4 +59,8 @@ private:
 	std::string _k; // channel password
 	size_t _limit;	// limit de membre
 	bool _n;		// yes/no messages externes
+	std::string _topic; // sujet du channel
+	bool _i;		// mode invite-only
+	bool _t;		// mode topic protected
+	std::vector<std::string> _inviteList; // liste des nicknames invités
 };

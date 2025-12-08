@@ -3,6 +3,7 @@
 #include "../inc/Server.hpp"
 #include "../inc/Channel.hpp"
 #include <iostream>
+#include <cstdlib>
 
 #define ERR_NONICKNAMEGIVEN(client) (":server 431 " + std::string(client) + " :No nickname given\r\n")
 #define ERR_NEEDMOREPARAMS(client, cmd) (":server 461 " + std::string(client) + " " + std::string(cmd) + " :Not enough parameters\r\n")
@@ -16,6 +17,14 @@
 #define ERR_NOSUCHNICK(client, nick) (":server 401 " + std::string(client) + " " + std::string(nick) + " :No such nick/channel\r\n")
 #define ERR_CANNOTSENDTOCHAN(client, chan) (":server 404 " + std::string(client) + " " + std::string(chan) + " :Cannot send to channel\r\n")
 #define ERR_NOTONCHANNEL(client, chan) (":server 442 " + std::string(client) + " " + std::string(chan) + " :You're not on that channel\r\n")
+#define ERR_USERNOTINCHANNEL(client, nick, chan) (":server 441 " + std::string(client) + " " + std::string(nick) + " " + std::string(chan) + " :They aren't on that channel\r\n")
+#define ERR_USERONCHANNEL(client, nick, chan) (":server 443 " + std::string(client) + " " + std::string(nick) + " " + std::string(chan) + " :is already on channel\r\n")
+#define ERR_KEYSET(client, chan) (":server 467 " + std::string(client) + " " + std::string(chan) + " :Channel key already set\r\n")
+#define ERR_UNKNOWNMODE(client, mode) (":server 472 " + std::string(client) + " " + std::string(mode) + " :is unknown mode char to me\r\n")
+#define ERR_INVITEONLYCHAN(client, chan) (":server 473 " + std::string(client) + " " + std::string(chan) + " :Cannot join channel (+i)\r\n")
+#define ERR_CHANOPRIVSNEEDED(client, chan) (":server 482 " + std::string(client) + " " + std::string(chan) + " :You're not channel operator\r\n")
+#define RPL_TOPIC(client, chan, topic) (":server 332 " + std::string(client) + " " + std::string(chan) + " :" + std::string(topic) + "\r\n")
+#define RPL_INVITING(client, nick, chan) (":server 341 " + std::string(client) + " " + std::string(nick) + " " + std::string(chan) + "\r\n")
 
 CommandHandler::CommandHandler(Server *server) : _server(server)
 {
@@ -35,10 +44,10 @@ void CommandHandler::execute(Client *client, const std::string &command)
 	std::string params = (pos != std::string::npos) ? command.substr(pos + 1) : "";
 
 	// tableau de commandes
-	std::string commands[8] = {"PING", "PASS", "NICK", "USER", "JOIN", "PRIVMSG", "PART", "QUIT"};
+	std::string commands[13] = {"PING", "PASS", "NICK", "USER", "JOIN", "PRIVMSG", "PART", "QUIT", "KICK", "INVITE", "TOPIC", "MODE", "NOTICE"};
 
 	// tableau des pointeurs de fonctions membres
-	void (CommandHandler::*handlers[8])(Client *, const std::string &) = {
+	void (CommandHandler::*handlers[13])(Client *, const std::string &) = {
 		&CommandHandler::handlePing,
 		&CommandHandler::handlePass,
 		&CommandHandler::handleNick,
@@ -46,10 +55,15 @@ void CommandHandler::execute(Client *client, const std::string &command)
 		&CommandHandler::handleJoin,
 		&CommandHandler::handlePrivmsg,
 		&CommandHandler::handlePart,
-		&CommandHandler::handleQuit
+		&CommandHandler::handleQuit,
+		&CommandHandler::handleKick,
+		&CommandHandler::handleInvite,
+		&CommandHandler::handleTopic,
+		&CommandHandler::handleMode,
+		&CommandHandler::handleNotice
 	};
 
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < 13; i++)
 	{
 		if (cmd == commands[i])
 		{
@@ -70,16 +84,10 @@ void CommandHandler::handlePing(Client *client, const std::string &params)
 void CommandHandler::handlePass(Client *client, const std::string &params)
 {
 	if (params.empty())
-	{
-		client->sendMessage(ERR_NEEDMOREPARAMS("*", "PASS"));
-		return;
-	}
+		return client->sendMessage(ERR_NEEDMOREPARAMS("*", "PASS")), void();
 
 	if (client->isRegistered())
-	{
-		client->sendMessage(ERR_ALREADYREGISTRED(client->getNickname()));
-		return;
-	}
+		return client->sendMessage(ERR_ALREADYREGISTRED(client->getNickname())), void();
 
 	if (params == _server->getPassword())
 		client->setAuthenticated(true);
@@ -90,10 +98,7 @@ void CommandHandler::handlePass(Client *client, const std::string &params)
 void CommandHandler::handleNick(Client *client, const std::string &params)
 {
 	if (params.empty())
-	{
-		client->sendMessage(ERR_NONICKNAMEGIVEN("*"));
-		return;
-	}
+		return client->sendMessage(ERR_NONICKNAMEGIVEN("*")), void();
 
 	std::string nickname = params.substr(0, params.find(' '));
 
@@ -106,16 +111,10 @@ void CommandHandler::handleNick(Client *client, const std::string &params)
 void CommandHandler::handleUser(Client *client, const std::string &params)
 {
 	if (params.empty())
-	{
-		client->sendMessage(ERR_NEEDMOREPARAMS("*", "USER"));
-		return;
-	}
+		return client->sendMessage(ERR_NEEDMOREPARAMS("*", "USER")), void();
 
 	if (client->isRegistered())
-	{
-		client->sendMessage(ERR_ALREADYREGISTRED(client->getNickname()));
-		return;
-	}
+		return client->sendMessage(ERR_ALREADYREGISTRED(client->getNickname())), void();
 
 	// format: USER username 0 * :realname
 	size_t space = params.find(' ');
@@ -137,16 +136,10 @@ void CommandHandler::handleUser(Client *client, const std::string &params)
 void CommandHandler::handleJoin(Client *client, const std::string &params)
 {
 	if (!client->isRegistered())
-	{
-		client->sendMessage(ERR_NOTREGISTERED(client->getNickname()));
-		return;
-	}
+		return client->sendMessage(ERR_NOTREGISTERED(client->getNickname())), void();
 
 	if (params.empty())
-	{
-		client->sendMessage(ERR_NEEDMOREPARAMS(client->getNickname(), "JOIN"));
-		return;
-	}
+		return client->sendMessage(ERR_NEEDMOREPARAMS(client->getNickname(), "JOIN")), void();
 
 	// parser JOIN #channel [key]
 	size_t space = params.find(' ');
@@ -154,10 +147,7 @@ void CommandHandler::handleJoin(Client *client, const std::string &params)
 	std::string key = (space != std::string::npos) ? params.substr(space + 1) : "";
 
 	if (channelName[0] != '#')
-	{
-		client->sendMessage(ERR_NOSUCHCHANNEL(client->getNickname(), channelName));
-		return;
-	}
+		return client->sendMessage(ERR_NOSUCHCHANNEL(client->getNickname(), channelName)), void();
 
 	Channel *channel = _server->getChannelByName(channelName);
 
@@ -184,19 +174,20 @@ void CommandHandler::handleJoin(Client *client, const std::string &params)
 	if (channel->has_client(client))
 		return;
 
+	// vérifier si le channel est en mode invite-only (+i)
+	if (channel->is_invite_only() && !channel->is_invited(client->getNickname()))
+		return client->sendMessage(ERR_INVITEONLYCHAN(client->getNickname(), channelName)), void();
+
 	if (!channel->get_key().empty() && channel->get_key() != key)
-	{
-		client->sendMessage(ERR_BADCHANNELKEY(client->getNickname(), channelName));
-		return;
-	}
+		return client->sendMessage(ERR_BADCHANNELKEY(client->getNickname(), channelName)), void();
 
 	if (channel->get_limit() > 0 && channel->get_size() >= channel->get_limit())
-	{
-		client->sendMessage(ERR_CHANNELISFULL(client->getNickname(), channelName));
-		return;
-	}
+		return client->sendMessage(ERR_CHANNELISFULL(client->getNickname(), channelName)), void();
 
 	channel->add_client(client);
+
+	// retirer le client de la liste d'invitations s'il y était
+	channel->remove_invite(client->getNickname());
 
 	std::string joinMsg = ":" + client->getNickname() + " JOIN " + channelName + "\r\n";
 	channel->broadcast(joinMsg, NULL);
@@ -215,27 +206,18 @@ void CommandHandler::handleJoin(Client *client, const std::string &params)
 void CommandHandler::handlePrivmsg(Client *client, const std::string &params)
 {
 	if (!client->isRegistered())
-	{
-		client->sendMessage(ERR_NOTREGISTERED(client->getNickname()));
-		return;
-	}
+		return client->sendMessage(ERR_NOTREGISTERED(client->getNickname())), void();
 
 	// parser PRIVMSG <target> :<message>
 	size_t space = params.find(' ');
 	if (space == std::string::npos)
-	{
-		client->sendMessage(ERR_NEEDMOREPARAMS(client->getNickname(), "PRIVMSG"));
-		return;
-	}
+		return client->sendMessage(ERR_NEEDMOREPARAMS(client->getNickname(), "PRIVMSG")), void();
 
 	std::string target = params.substr(0, space);
 	std::string message = params.substr(space + 1);
 
 	if (message.empty() || message[0] != ':')
-	{
-		client->sendMessage(ERR_NOTEXTTOSEND(client->getNickname()));
-		return;
-	}
+		return client->sendMessage(ERR_NOTEXTTOSEND(client->getNickname())), void();
 
 	message = message.substr(1);
 
@@ -245,16 +227,10 @@ void CommandHandler::handlePrivmsg(Client *client, const std::string &params)
 		Channel *channel = _server->getChannelByName(target);
 
 		if (!channel)
-		{
-			client->sendMessage(ERR_NOSUCHCHANNEL(client->getNickname(), target));
-			return;
-		}
+			return client->sendMessage(ERR_NOSUCHCHANNEL(client->getNickname(), target)), void();
 
 		if (!channel->has_client(client))
-		{
-			client->sendMessage(ERR_CANNOTSENDTOCHAN(client->getNickname(), target));
-			return;
-		}
+			return client->sendMessage(ERR_CANNOTSENDTOCHAN(client->getNickname(), target)), void();
 
 		std::string fullMsg = ":" + client->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
 		channel->broadcast(fullMsg, client);
@@ -262,23 +238,10 @@ void CommandHandler::handlePrivmsg(Client *client, const std::string &params)
 	// 2) message privé vers un user
 	else
 	{
-		Client *targetClient = NULL;
-		std::vector<Client *> allClients = _server->getAllClients();
-
-		for (size_t i = 0; i < allClients.size(); i++)
-		{
-			if (allClients[i]->getNickname() == target)
-			{
-				targetClient = allClients[i];
-				break;
-			}
-		}
+		Client *targetClient = findClientByNickname(target);
 
 		if (!targetClient)
-		{
-			client->sendMessage(ERR_NOSUCHNICK(client->getNickname(), target));
-			return;
-		}
+			return client->sendMessage(ERR_NOSUCHNICK(client->getNickname(), target)), void();
 
 		std::string fullMsg = ":" + client->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
 		targetClient->sendMessage(fullMsg);
@@ -288,16 +251,10 @@ void CommandHandler::handlePrivmsg(Client *client, const std::string &params)
 void CommandHandler::handlePart(Client *client, const std::string &params)
 {
 	if (!client->isRegistered())
-	{
-		client->sendMessage(ERR_NOTREGISTERED(client->getNickname()));
-		return;
-	}
+		return client->sendMessage(ERR_NOTREGISTERED(client->getNickname())), void();
 
 	if (params.empty())
-	{
-		client->sendMessage(ERR_NEEDMOREPARAMS(client->getNickname(), "PART"));
-		return;
-	}
+		return client->sendMessage(ERR_NEEDMOREPARAMS(client->getNickname(), "PART")), void();
 
 	// parser PART #channel [:reason]
 	size_t space = params.find(' ');
@@ -311,16 +268,10 @@ void CommandHandler::handlePart(Client *client, const std::string &params)
 	Channel *channel = _server->getChannelByName(channelName);
 
 	if (!channel)
-	{
-		client->sendMessage(ERR_NOSUCHCHANNEL(client->getNickname(), channelName));
-		return;
-	}
+		return client->sendMessage(ERR_NOSUCHCHANNEL(client->getNickname(), channelName)), void();
 
 	if (!channel->has_client(client))
-	{
-		client->sendMessage(ERR_NOTONCHANNEL(client->getNickname(), channelName));
-		return;
-	}
+		return client->sendMessage(ERR_NOTONCHANNEL(client->getNickname(), channelName)), void();
 
 	// construire le message PART
 	std::string partMsg = ":" + client->getNickname() + " PART " + channelName;
@@ -377,4 +328,21 @@ void CommandHandler::sendWelcomeMessages(Client *client)
 	client->sendMessage(":server 002 " + nick + " :Your host is server, running version 1.0\r\n");
 	client->sendMessage(":server 003 " + nick + " :This server was created 2025-01-01\r\n");
 	client->sendMessage(":server 004 " + nick + " server 1.0 io itkol\r\n");
+}
+
+// Helper functions
+Client* CommandHandler::findClientByNickname(const std::string& nickname)
+{
+	std::vector<Client*> allClients = _server->getAllClients();
+	for (size_t i = 0; i < allClients.size(); i++)
+	{
+		if (allClients[i]->getNickname() == nickname)
+			return allClients[i];
+	}
+	return NULL;
+}
+
+Channel* CommandHandler::getChannel(const std::string& channelName)
+{
+	return _server->getChannelByName(channelName);
 }
