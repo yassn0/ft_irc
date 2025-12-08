@@ -7,13 +7,13 @@ WAY_H = inc/
 SRCS   = $(WAY)main.cpp \
 		$(WAY)Server.cpp \
 		$(WAY)Client.cpp \
-		$(WAY)CommandHandler.cpp
-		# $(WAY)Channel.cpp
+		$(WAY)CommandHandler.cpp \
+		$(WAY)Channel.cpp
 
 HEADER  = $(WAY_H)Server.hpp \
 		$(WAY_H)Client.hpp \
-		$(WAY_H)CommandHandler.hpp
-		# $(WAY_H)Channel.hpp
+		$(WAY_H)CommandHandler.hpp \
+		$(WAY_H)Channel.hpp
 
 
 OBJS   = $(SRCS:.cpp=.o)

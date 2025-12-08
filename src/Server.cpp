@@ -1,6 +1,7 @@
 #include "../inc/Server.hpp"
 #include "../inc/Client.hpp"
 #include "../inc/CommandHandler.hpp"
+#include "../inc/Channel.hpp"
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
@@ -32,6 +33,11 @@ Server::Server(const std::string &port, const std::string &pass) : _server_fd(-1
 
 Server::~Server()
 {
+	// supprimer tous les channels
+	for (size_t i = 0; i < _channels.size(); i++)
+		delete _channels[i];
+	_channels.clear();
+
 	// fermer et supprimer tous les clients restants
 	// On fait une copie du vecteur pour éviter les problèmes d'itération
 	std::vector<int> client_fds;
@@ -245,4 +251,27 @@ Client *Server::getClientByFd(int fd)
 const std::string &Server::getPassword() const
 {
 	return _password;
+}
+
+Channel *Server::getChannelByName(const std::string &name)
+{
+	for (size_t i = 0; i < _channels.size(); i++)
+	{
+		if (_channels[i]->get_name() == name)
+			return _channels[i];
+	}
+	return NULL;
+}
+
+Channel *Server::createChannel(const std::string &name, const std::string &key, Client *creator)
+{
+	Channel *channel = new Channel(name, key, creator);
+	_channels.push_back(channel);
+	channel->add_client(creator);
+	return channel;
+}
+
+std::vector<Client *> Server::getAllClients() const
+{
+	return _clients;
 }

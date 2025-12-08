@@ -40,14 +40,12 @@ std::vector<std::string> Channel::get_nicknames()
 {
 	std::vector<std::string> nicknames;
 
-	while (size_t i = 0 < _clients.size())
+	for (size_t i = 0; i < _clients.size(); i++)
 	{
 		Client *client = _clients[i];
 
 		std::string nick = (client == _admin ? "@" : "") + client->getNickname();
 		nicknames.push_back(nick);
-
-		i++;
 	}
 
 	return nicknames;
@@ -67,4 +65,39 @@ void Channel::set_ext_msg(bool flag)
 	_n = flag;
 }
 
-//channels actions
+// channels actions
+void Channel::add_client(Client *client)
+{
+	_clients.push_back(client);
+}
+
+void Channel::remove_client(Client *client)
+{
+	for (size_t i = 0; i < _clients.size(); i++)
+	{
+		if (_clients[i] == client)
+		{
+			_clients.erase(_clients.begin() + i);
+			return;
+		}
+	}
+}
+
+void Channel::broadcast(const std::string &message, Client *exclude)
+{
+	for (size_t i = 0; i < _clients.size(); i++)
+	{
+		if (_clients[i] != exclude)
+			_clients[i]->sendMessage(message);
+	}
+}
+
+bool Channel::has_client(Client *client) const
+{
+	for (size_t i = 0; i < _clients.size(); i++)
+	{
+		if (_clients[i] == client)
+			return true;
+	}
+	return false;
+}

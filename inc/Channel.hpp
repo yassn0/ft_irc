@@ -10,10 +10,6 @@ public:
 	Channel(const std::string &name, const std::string &key, Client *admin);
 	~Channel();
 
-private:
-	Channel(const Channel &other);
-	Channel &operator=(const Channel &other);
-
 	// Getters
 	std::string get_name() const;
 	Client *get_admin() const;
@@ -23,7 +19,7 @@ private:
 	size_t get_size() const;
 	std::vector<std::string> get_nicknames();
 
-	// Settrers
+	// Setters
 	void set_key(std::string key);
 	void set_limit(size_t limit);
 	void set_ext_msg(bool flag);
@@ -31,9 +27,13 @@ private:
 	// Actions
 	void add_client(Client *client);
 	void remove_client(Client *client);
-	//...
+	void broadcast(const std::string& message, Client* exclude);
+	bool has_client(Client* client) const;
 
-	
+private:
+	Channel(const Channel &other);
+	Channel &operator=(const Channel &other);
+
 	std::string _name;
 	Client *_admin;
 	std::vector<Client *> _clients;

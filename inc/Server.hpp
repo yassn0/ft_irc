@@ -6,6 +6,7 @@
 #include "CommandHandler.hpp"
 
 class Client;
+class Channel;
 
 class Server
 {
@@ -16,6 +17,9 @@ public:
 	void start(); // lance la boucle principale
 
 	const std::string& getPassword() const;
+	Channel* getChannelByName(const std::string& name);
+	Channel* createChannel(const std::string& name, const std::string& key, Client* creator);
+	std::vector<Client*> getAllClients() const;
 
 private:
 	Server();
@@ -33,6 +37,7 @@ private:
 	int _port;
 	std::string _password;
 	std::vector<Client *> _clients;
+	std::vector<Channel *> _channels;
 	std::vector<struct pollfd> _poll_fds;  // Tableau pour poll()
 	CommandHandler _commandHandler;
 };
