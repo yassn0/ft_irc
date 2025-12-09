@@ -9,6 +9,14 @@ SRCS   = $(WAY)main.cpp \
 		$(WAY)Client.cpp \
 		$(WAY)CommandHandler.cpp \
 		$(WAY)Channel.cpp \
+		$(WAY)commands/Ping.cpp \
+		$(WAY)commands/Pass.cpp \
+		$(WAY)commands/Nick.cpp \
+		$(WAY)commands/User.cpp \
+		$(WAY)commands/Join.cpp \
+		$(WAY)commands/Privmsg.cpp \
+		$(WAY)commands/Part.cpp \
+		$(WAY)commands/Quit.cpp \
 		$(WAY)commands/Kick.cpp \
 		$(WAY)commands/Invite.cpp \
 		$(WAY)commands/Topic.cpp \
