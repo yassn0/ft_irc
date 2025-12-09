@@ -10,8 +10,14 @@ void CommandHandler::handleNick(Client *client, const std::string &params)
 
 	std::string nickname = params.substr(0, params.find(' '));
 
-	// Vérifier si le nickname est déjà utilisé (on pourra implémenter ça plus tard avec une liste)
-	// Pour l'instant, on accepte tous les nicknames non vides
+	// doit être authentifié avant de choisir un nickname
+	if (!client->isAuthenticated())
+		return client->sendMessage(ERR_NOTREGISTERED("*")), void();
+
+	// vérifier si le nickname est déjà utilisé
+	Client* existing = findClientByNickname(nickname);
+	if (existing && existing != client)
+		return client->sendMessage(ERR_NICKNAMEINUSE("*", nickname)), void();
 
 	client->setNickname(nickname);
 }

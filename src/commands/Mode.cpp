@@ -69,13 +69,7 @@ void CommandHandler::handleMode(Client *client, const std::string &params)
 				std::string key = (paramSpace != std::string::npos) ? modeParams.substr(0, paramSpace) : modeParams;
 				modeParams = (paramSpace != std::string::npos) ? modeParams.substr(paramSpace + 1) : "";
 
-				// vérifier si une clé existe déjà
-				if (!channel->get_key().empty())
-				{
-					client->sendMessage(ERR_KEYSET(client->getNickname(), channelName));
-					continue;
-				}
-
+				// définir/changer la clé du channel
 				channel->set_key(key);
 				appliedModes += mode;
 				appliedParams += " " + key;

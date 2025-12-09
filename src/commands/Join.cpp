@@ -30,7 +30,12 @@ void CommandHandler::handleJoin(Client *client, const std::string &params)
 		std::string joinMsg = ":" + client->getNickname() + " JOIN " + channelName + "\r\n";
 		client->sendMessage(joinMsg);
 
-		client->sendMessage(":server 331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n");
+		// envoyer le topic s'il existe, sinon indiquer qu'il n'y en a pas
+		std::string topic = channel->get_topic();
+		if (topic.empty())
+			client->sendMessage(":server 331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n");
+		else
+			client->sendMessage(RPL_TOPIC(client->getNickname(), channelName, topic));
 
 		std::vector<std::string> nicks = channel->get_nicknames();
 		std::string namelist;
@@ -64,7 +69,12 @@ void CommandHandler::handleJoin(Client *client, const std::string &params)
 	std::string joinMsg = ":" + client->getNickname() + " JOIN " + channelName + "\r\n";
 	channel->broadcast(joinMsg, NULL);
 
-	client->sendMessage(":server 331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n");
+	// envoyer le topic s'il existe, sinon indiquer qu'il n'y en a pas
+	std::string topic = channel->get_topic();
+	if (topic.empty())
+		client->sendMessage(":server 331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n");
+	else
+		client->sendMessage(RPL_TOPIC(client->getNickname(), channelName, topic));
 
 	std::vector<std::string> nicks = channel->get_nicknames();
 	std::string namelist;

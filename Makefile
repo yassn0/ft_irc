@@ -9,6 +9,7 @@ SRCS   = $(WAY)main.cpp \
 		$(WAY)Client.cpp \
 		$(WAY)CommandHandler.cpp \
 		$(WAY)Channel.cpp \
+		$(WAY)commands/Cap.cpp \
 		$(WAY)commands/Ping.cpp \
 		$(WAY)commands/Pass.cpp \
 		$(WAY)commands/Nick.cpp \

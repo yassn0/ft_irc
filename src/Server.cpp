@@ -224,8 +224,27 @@ void Server::handleClientMessage(int client_fd)
 
 void Server::removeClient(int client_fd)
 {
+	Client *client = getClientByFd(client_fd);
+	if (!client)
+		return;
+
+	// retirer le client de tous les channels qu'il a rejoints
+	for (size_t i = 0; i < _channels.size(); i++)
+	{
+		if (_channels[i]->has_client(client))
+		{
+			// broadcaster le QUIT aux autres membres du channel
+			std::string quitMsg = ":" + client->getNickname() + " QUIT :Client disconnected\r\n";
+			_channels[i]->broadcast(quitMsg, client);
+
+			// retirer le client du channel
+			_channels[i]->remove_client(client);
+		}
+	}
+
 	close(client_fd);
 
+	// retirer le fd de poll
 	for (size_t i = 0; i < _poll_fds.size(); i++)
 	{
 		if (_poll_fds[i].fd == client_fd)
@@ -235,6 +254,7 @@ void Server::removeClient(int client_fd)
 		}
 	}
 
+	// supprimer le client
 	for (size_t i = 0; i < _clients.size(); i++)
 	{
 		if (_clients[i]->getFd() == client_fd)

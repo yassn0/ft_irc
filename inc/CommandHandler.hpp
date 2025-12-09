@@ -21,6 +21,7 @@ private:
 
 	Server* _server;
 
+	void handleCap(Client* client, const std::string& params);
 	void handlePing(Client* client, const std::string& params);
 	void handlePass(Client* client, const std::string& params);
 	void handleNick(Client* client, const std::string& params);

@@ -23,10 +23,11 @@ void CommandHandler::execute(Client *client, const std::string &command)
 	std::string params = (pos != std::string::npos) ? command.substr(pos + 1) : "";
 
 	// tableau de commandes
-	std::string commands[13] = {"PING", "PASS", "NICK", "USER", "JOIN", "PRIVMSG", "PART", "QUIT", "KICK", "INVITE", "TOPIC", "MODE", "NOTICE"};
+	std::string commands[14] = {"CAP", "PING", "PASS", "NICK", "USER", "JOIN", "PRIVMSG", "PART", "QUIT", "KICK", "INVITE", "TOPIC", "MODE", "NOTICE"};
 
 	// tableau des pointeurs de fonctions membres
-	void (CommandHandler::*handlers[13])(Client *, const std::string &) = {
+	void (CommandHandler::*handlers[14])(Client *, const std::string &) = {
+		&CommandHandler::handleCap,
 		&CommandHandler::handlePing,
 		&CommandHandler::handlePass,
 		&CommandHandler::handleNick,
@@ -42,7 +43,7 @@ void CommandHandler::execute(Client *client, const std::string &command)
 		&CommandHandler::handleNotice
 	};
 
-	for (int i = 0; i < 13; i++)
+	for (int i = 0; i < 14; i++)
 	{
 		if (cmd == commands[i])
 		{

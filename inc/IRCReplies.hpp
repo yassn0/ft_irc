@@ -4,6 +4,7 @@
 
 // IRC Error codes
 #define ERR_NONICKNAMEGIVEN(client) (":server 431 " + std::string(client) + " :No nickname given\r\n")
+#define ERR_NICKNAMEINUSE(client, nick) (":server 433 " + std::string(client) + " " + std::string(nick) + " :Nickname is already in use\r\n")
 #define ERR_NEEDMOREPARAMS(client, cmd) (":server 461 " + std::string(client) + " " + std::string(cmd) + " :Not enough parameters\r\n")
 #define ERR_ALREADYREGISTRED(client) (":server 462 " + std::string(client) + " :You may not reregister\r\n")
 #define ERR_PASSWDMISMATCH(client) (":server 464 " + std::string(client) + " :Password incorrect\r\n")
