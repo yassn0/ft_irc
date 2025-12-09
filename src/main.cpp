@@ -5,8 +5,6 @@
 #include <climits>
 #include <cstring>
 #include "../inc/Server.hpp"
-// #include "../inc/Client.hpp"  // Pas encore utilisé
-// #include "../inc/Channel.hpp" // Pas encore utilisé
 
 static bool is_valid_number(const char *str)
 {
