@@ -40,6 +40,4 @@ void CommandHandler::handlePart(Client *client, const std::string &params)
 
 	// retirer le client du channel
 	channel->remove_client(client);
-
-	// TODO: si le channel est vide, le supprimer (on peut implémenter ça plus tard)
 }

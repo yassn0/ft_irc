@@ -15,17 +15,15 @@ CommandHandler::~CommandHandler()
 
 void CommandHandler::execute(Client *client, const std::string &command)
 {
-	std::cout << "Command from fd " << client->getUsername() << ": " << command << std::endl;
+	std::cout << "Command from " << client->getUsername() << ": " << command << std::endl;
 
 	// extraire le nom de la commande et les paramètres
 	size_t pos = command.find(' ');
 	std::string cmd = (pos != std::string::npos) ? command.substr(0, pos) : command;
 	std::string params = (pos != std::string::npos) ? command.substr(pos + 1) : "";
 
-	// tableau de commandes
 	std::string commands[14] = {"CAP", "PING", "PASS", "NICK", "USER", "JOIN", "PRIVMSG", "PART", "QUIT", "KICK", "INVITE", "TOPIC", "MODE", "NOTICE"};
 
-	// tableau des pointeurs de fonctions membres
 	void (CommandHandler::*handlers[14])(Client *, const std::string &) = {
 		&CommandHandler::handleCap,
 		&CommandHandler::handlePing,

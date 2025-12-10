@@ -27,28 +27,37 @@ Server::Server(const std::string &port, const std::string &pass) : _server_fd(-1
 
 	std::signal(SIGINT, signalHandler);
 	std::signal(SIGTERM, signalHandler);
+	std::signal(SIGQUIT, signalHandler);
 
 	setupSocket();
 }
 
 Server::~Server()
 {
+	// fermer tous les clients
+	for (size_t i = 0; i < _clients.size(); i++)
+	{
+		if (_clients[i])
+		{
+			close(_clients[i]->getFd());
+			delete _clients[i];
+		}
+	}
+	_clients.clear();
+
 	// supprimer tous les channels
 	for (size_t i = 0; i < _channels.size(); i++)
-		delete _channels[i];
+	{
+		if (_channels[i])
+			delete _channels[i];
+	}
 	_channels.clear();
 
-	// fermer et supprimer tous les clients restants
-	// On fait une copie du vecteur pour éviter les problèmes d'itération
-	std::vector<int> client_fds;
-	for (size_t i = 0; i < _clients.size(); i++)
-		client_fds.push_back(_clients[i]->getFd());
-
-	for (size_t i = 0; i < client_fds.size(); i++)
-		removeClient(client_fds[i]);
-
+	// fermer le socket serveur
 	if (_server_fd != -1)
 		close(_server_fd);
+
+	std::cout << "Server stopped" << std::endl;
 }
 
 void Server::setupSocket()
@@ -105,8 +114,6 @@ void Server::setupSocket()
 
 void Server::start()
 {
-	std::cout << "Server running. Press Ctrl+C to stop." << std::endl;
-
 	while (!g_shutdown)
 	{
 		// poll() attend qu'il se passe quelque chose
@@ -142,7 +149,7 @@ void Server::start()
 				removeClient(_poll_fds[idx].fd);
 		}
 
-		// vérifier si des clients doivent être déconnectés (après QUIT par exemple)
+		// vérifier si des clients doivent être déconnectés
 		for (size_t i = _clients.size(); i > 0; i--)
 		{
 			size_t idx = i - 1;
@@ -150,8 +157,6 @@ void Server::start()
 				removeClient(_clients[idx]->getFd());
 		}
 	}
-
-	std::cout << "Server shutting down..." << std::endl;
 }
 
 void Server::acceptNewClient()
@@ -210,7 +215,7 @@ void Server::handleClientMessage(int client_fd)
 	{
 		// extraire la commande
 		std::string command = buf.substr(0, pos);
-		buf.erase(0, pos + 2); // Enlever la commande + \r\n
+		buf.erase(0, pos + 2); // enlever la commande + \r\n
 
 		// traiter la commande via CommandHandler
 		if (!command.empty())
