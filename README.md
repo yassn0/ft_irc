@@ -1,6 +1,6 @@
 # ft_irc
 
-An IRC (Internet Relay Chat) server implementation in C++98.
+An IRC (Internet Relay Chat) server implementation in C++.
 
 ## Description
 
@@ -77,25 +77,6 @@ PRIVMSG #general :Hello World!
 - **Error Handling**: Proper IRC numeric replies
 - **Memory Management**: No leaks (tested with valgrind)
 
-## Project Structure
-
-```
-.
-├── inc/              # Header files
-├── src/              # Source files
-│   └── commands/     # IRC command implementations
-└── Makefile          # Build configuration
-```
-
 ## 42 School Project
 
-This project is part of the 42 Network curriculum. It focuses on:
-- Network programming
-- Socket management
-- Concurrent client handling
-- Protocol implementation
-- C++98 standard compliance
-
----
-
-**Grade**: Pending evaluation
+This project is part of the 42 Network curriculum.
