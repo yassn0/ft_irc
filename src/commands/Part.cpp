@@ -29,8 +29,12 @@ void CommandHandler::handlePart(Client *client, const std::string &params)
 	if (!channel->has_client(client))
 		return client->sendMessage(ERR_NOTONCHANNEL(client->getNickname(), channelName)), void();
 
-	// construire le message PART
-	std::string partMsg = ":" + client->getNickname() + " PART " + channelName;
+	// construire le message PART avec le préfixe complet
+	std::string prefix = client->getNickname();
+	if (!client->getUsername().empty())
+		prefix += "!" + client->getUsername() + "@localhost";
+
+	std::string partMsg = ":" + prefix + " PART " + channelName;
 	if (!reason.empty())
 		partMsg += " :" + reason;
 	partMsg += "\r\n";

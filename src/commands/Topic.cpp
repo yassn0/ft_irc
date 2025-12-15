@@ -46,6 +46,10 @@ void CommandHandler::handleTopic(Client *client, const std::string &params)
 	channel->set_topic(newTopic);
 
 	// broadcaster le changement à tous les membres
-	std::string topicMsg = ":" + client->getNickname() + " TOPIC " + channelName + " :" + newTopic + "\r\n";
+	std::string prefix = client->getNickname();
+	if (!client->getUsername().empty())
+		prefix += "!" + client->getUsername() + "@localhost";
+
+	std::string topicMsg = ":" + prefix + " TOPIC " + channelName + " :" + newTopic + "\r\n";
 	channel->broadcast(topicMsg, NULL);
 }

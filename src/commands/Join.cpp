@@ -25,10 +25,14 @@ void CommandHandler::handleJoin(Client *client, const std::string &params)
 
 	if (!channel)
 	{
-		channel = _server->createChannel(channelName, key, client);
+	channel = _server->createChannel(channelName, key, client);
 
-		std::string joinMsg = ":" + client->getNickname() + " JOIN " + channelName + "\r\n";
-		client->sendMessage(joinMsg);
+	std::string prefix = client->getNickname();
+	if (!client->getUsername().empty())
+		prefix += "!" + client->getUsername() + "@localhost";
+
+	std::string joinMsg = ":" + prefix + " JOIN " + channelName + "\r\n";
+	client->sendMessage(joinMsg);
 
 		// envoyer le topic s'il existe, sinon indiquer qu'il n'y en a pas
 		std::string topic = channel->get_topic();
@@ -66,7 +70,11 @@ void CommandHandler::handleJoin(Client *client, const std::string &params)
 	// retirer le client de la liste d'invitations s'il y était
 	channel->remove_invite(client->getNickname());
 
-	std::string joinMsg = ":" + client->getNickname() + " JOIN " + channelName + "\r\n";
+	std::string prefix = client->getNickname();
+	if (!client->getUsername().empty())
+		prefix += "!" + client->getUsername() + "@localhost";
+
+	std::string joinMsg = ":" + prefix + " JOIN " + channelName + "\r\n";
 	channel->broadcast(joinMsg, NULL);
 
 	// envoyer le topic s'il existe, sinon indiquer qu'il n'y en a pas

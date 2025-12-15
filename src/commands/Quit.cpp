@@ -11,8 +11,12 @@ void CommandHandler::handleQuit(Client *client, const std::string &params)
 	if (!reason.empty() && reason[0] == ':')
 		reason = reason.substr(1);
 
-	// construire le message QUIT
-	std::string quitMsg = ":" + client->getNickname() + " QUIT :";
+	// construire le message QUIT avec le préfixe complet
+	std::string prefix = client->getNickname();
+	if (!client->getUsername().empty())
+		prefix += "!" + client->getUsername() + "@localhost";
+
+	std::string quitMsg = ":" + prefix + " QUIT :";
 	if (!reason.empty())
 		quitMsg += reason;
 	else

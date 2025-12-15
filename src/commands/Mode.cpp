@@ -158,7 +158,11 @@ void CommandHandler::handleMode(Client *client, const std::string &params)
 	// broadcaster le changement si des modes ont été appliqués
 	if (!appliedModes.empty())
 	{
-		std::string modeMsg = ":" + client->getNickname() + " MODE " + channelName + " ";
+		std::string prefix = client->getNickname();
+		if (!client->getUsername().empty())
+			prefix += "!" + client->getUsername() + "@localhost";
+
+		std::string modeMsg = ":" + prefix + " MODE " + channelName + " ";
 		modeMsg += (adding ? "+" : "-") + appliedModes + appliedParams + "\r\n";
 		channel->broadcast(modeMsg, NULL);
 	}

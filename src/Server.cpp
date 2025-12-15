@@ -193,7 +193,6 @@ void Server::handleClientMessage(int client_fd)
 
 	if (bytes_read <= 0)
 	{
-		std::cout << "Client < " << client_fd << "> Disconnected" << std::endl;
 		removeClient(client_fd);
 		return;
 	}

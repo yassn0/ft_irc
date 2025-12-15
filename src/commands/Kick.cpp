@@ -41,7 +41,11 @@ void CommandHandler::handleKick(Client *client, const std::string &params)
 	if (!channel->has_client(target))
 		return client->sendMessage(ERR_USERNOTINCHANNEL(client->getNickname(), targetNick, channelName)), void();
 
-	std::string kickMsg = ":" + client->getNickname() + " KICK " + channelName + " " + targetNick + " :" + reason + "\r\n";
+	std::string prefix = client->getNickname();
+	if (!client->getUsername().empty())
+		prefix += "!" + client->getUsername() + "@localhost";
+
+	std::string kickMsg = ":" + prefix + " KICK " + channelName + " " + targetNick + " :" + reason + "\r\n";
 	channel->broadcast(kickMsg, NULL);
 	channel->remove_client(target);
 }
