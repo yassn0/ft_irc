@@ -145,7 +145,7 @@ void Server::start()
 					handleClientMessage(_poll_fds[idx].fd);
 			}
 
-			if (_poll_fds[idx].revents & POLLHUP)
+			if (_poll_fds[idx].revents & (POLLHUP | POLLERR))
 				removeClient(_poll_fds[idx].fd);
 		}
 
