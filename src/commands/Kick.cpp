@@ -47,5 +47,26 @@ void CommandHandler::handleKick(Client *client, const std::string &params)
 
 	std::string kickMsg = ":" + prefix + " KICK " + channelName + " " + targetNick + " :" + reason + "\r\n";
 	channel->broadcast(kickMsg, NULL);
+
+	// si la target est opérateur et qu'il reste d'autres membres
+	if (channel->is_operator(target) && channel->get_size() > 1)
+	{
+		// donner le statut d'opérateur au premier autre membre
+		std::vector<std::string> nicks = channel->get_nicknames();
+		for (size_t i = 0; i < nicks.size(); i++)
+		{
+			Client* nextOp = findClientByNickname(nicks[i]);
+			if (nextOp && nextOp != target)
+			{
+				channel->set_operator(nextOp);
+				break;
+			}
+		}
+	}
+
 	channel->remove_client(target);
+
+	// supprimer le channel s'il est vide
+	if (channel->get_size() == 0)
+		_server->removeChannel(channel);
 }

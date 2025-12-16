@@ -19,6 +19,7 @@ public:
 	const std::string& getPassword() const;
 	Channel* getChannelByName(const std::string& name);
 	Channel* createChannel(const std::string& name, const std::string& key, Client* creator);
+	void removeChannel(Channel* channel);
 	std::vector<Client*> getAllClients() const;
 	std::vector<Channel*> getAllChannels() const;
 

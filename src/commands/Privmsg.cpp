@@ -22,6 +22,10 @@ void CommandHandler::handlePrivmsg(Client *client, const std::string &params)
 
 	message = message.substr(1);
 
+	std::string prefix = client->getNickname();
+	if (!client->getUsername().empty())
+		prefix += "!" + client->getUsername() + "@localhost";
+
 	// 1) message vers un channel (#channel)
 	if (target[0] == '#')
 	{
@@ -33,7 +37,7 @@ void CommandHandler::handlePrivmsg(Client *client, const std::string &params)
 		if (!channel->has_client(client))
 			return client->sendMessage(ERR_CANNOTSENDTOCHAN(client->getNickname(), target)), void();
 
-		std::string fullMsg = ":" + client->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
+		std::string fullMsg = ":" + prefix + " PRIVMSG " + target + " :" + message + "\r\n";
 		channel->broadcast(fullMsg, client);
 	}
 	// 2) message privé vers un user
@@ -44,7 +48,7 @@ void CommandHandler::handlePrivmsg(Client *client, const std::string &params)
 		if (!targetClient)
 			return client->sendMessage(ERR_NOSUCHNICK(client->getNickname(), target)), void();
 
-		std::string fullMsg = ":" + client->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
+		std::string fullMsg = ":" + prefix + " PRIVMSG " + target + " :" + message + "\r\n";
 		targetClient->sendMessage(fullMsg);
 	}
 }

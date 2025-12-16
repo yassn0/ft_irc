@@ -42,6 +42,26 @@ void CommandHandler::handlePart(Client *client, const std::string &params)
 	// broadcaster à tous les membres du channel (y compris celui qui part)
 	channel->broadcast(partMsg, NULL);
 
+	// si le client qui part est opérateur et qu'il reste d'autres membres
+	if (channel->is_operator(client) && channel->get_size() > 1)
+	{
+		// donner le statut d'opérateur au premier autre membre
+		std::vector<std::string> nicks = channel->get_nicknames();
+		for (size_t i = 0; i < nicks.size(); i++)
+		{
+			Client* nextOp = findClientByNickname(nicks[i]);
+			if (nextOp && nextOp != client)
+			{
+				channel->set_operator(nextOp);
+				break;
+			}
+		}
+	}
+
 	// retirer le client du channel
 	channel->remove_client(client);
+
+	// supprimer le channel s'il est vide
+	if (channel->get_size() == 0)
+		_server->removeChannel(channel);
 }

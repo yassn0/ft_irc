@@ -303,6 +303,22 @@ Channel *Server::createChannel(const std::string &name, const std::string &key, 
 	return channel;
 }
 
+void Server::removeChannel(Channel *channel)
+{
+	if (!channel)
+		return;
+
+	for (size_t i = 0; i < _channels.size(); i++)
+	{
+		if (_channels[i] == channel)
+		{
+			delete _channels[i];
+			_channels.erase(_channels.begin() + i);
+			return;
+		}
+	}
+}
+
 std::vector<Client *> Server::getAllClients() const
 {
 	return _clients;
